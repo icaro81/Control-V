@@ -1,4 +1,4 @@
-name: Compilar APK Android y Publicar Release
+name: Compilar APK Android Release
 
 on:
   push:
@@ -38,19 +38,36 @@ jobs:
     - name: Sincronizar proyecto Android
       run: npx cap sync android
 
+    - name: Generar firma de producción (Keystore RSA 2048-bit)
+      run: |
+        keytool -genkeypair -v \
+          -keystore android/app/release.keystore \
+          -alias controldiario \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -storepass controldiario123 \
+          -keypass controldiario123 \
+          -dname "CN=Control Diario, O=SoyDelivery, C=ES"
+
     - name: Dar permisos de ejecución a Gradle
       run: chmod +x android/gradlew
 
-    - name: Compilar APK de Android (Gradle)
+    - name: Compilar APK Release firmado (Gradle assembleRelease)
       run: |
         cd android
-        ./gradlew assembleDebug --no-daemon
+        ./gradlew assembleRelease --no-daemon
 
     - name: Preparar archivo APK final
       run: |
         mkdir -p build-output
-        cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
-        cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-latest.apk
+        if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+          cp android/app/build/outputs/apk/release/app-release.apk build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
+          cp android/app/build/outputs/apk/release/app-release.apk build-output/Control-Diario-latest.apk
+        else
+          cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-latest.apk
+        fi
 
     - name: Guardar archivo APK como Artifact de respaldo
       uses: actions/upload-artifact@v4
@@ -59,20 +76,21 @@ jobs:
         path: build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
         retention-days: 30
 
-    - name: Publicar Release oficial con APK en GitHub Releases
+    - name: Publicar Release oficial con APK firmado en GitHub
       uses: softprops/action-gh-release@v2
       if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
       with:
         tag_name: v1.0.${{ github.run_number }}
         name: Control Diario APK v1.0.${{ github.run_number }}
         body: |
-          ## 📱 Control Diario - Visitas Efectivas
-          **Versión:** `v1.0.${{ github.run_number }}` (Compilación automatizada)
-
+          ## 📱 Control Diario - Visitas Efectivas (Release Oficial)
+          **Versión:** `v1.0.${{ github.run_number }}`
+          **Firma:** Release RSA 2048-bit (Esquema v1 + v2)
+          
           ### 📥 Descarga Directa:
-          Haz clic en el archivo adjunto **`Control-Diario-v1.0.${{ github.run_number }}.apk`** para descargarlo e instalarlo directamente en tu teléfono Android.
-
-          > 🔒 **Tus datos están protegidos:** Al actualizar instalando esta APK, la base de datos y todos los registros guardados se conservan intactos.
+          Descarga **`Control-Diario-v1.0.${{ github.run_number }}.apk`** para instalar la versión oficial en tu teléfono Android.
+          
+          > 💡 **Instalación:** Si tu teléfono muestra el aviso de Google Play Protect al instalar un archivo descargado de internet, presiona en **"Instalar sin analizar"** para continuar.
         files: |
           build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
           build-output/Control-Diario-latest.apk
