@@ -110,6 +110,41 @@ export function saveDatabase(db: AppDatabase): { purged: string[] } {
 }
 
 /**
+ * Resets all stored data to 0, wiping all months and records cleanly.
+ */
+export function resetDatabase(): AppDatabase {
+  const now = new Date();
+  const currentMonthKey = toMonthKey(now);
+  const currentYear = now.getFullYear();
+  const currentMonthIndex = now.getMonth();
+
+  const freshDb: AppDatabase = {
+    version: 2,
+    ratePerVisit: DEFAULT_RATE,
+    dailyGoal: 15,
+    lastActiveMonthKey: currentMonthKey,
+    months: {
+      [currentMonthKey]: {
+        monthKey: currentMonthKey,
+        monthName: formatMonthYearSpanish(currentYear, currentMonthIndex),
+        year: currentYear,
+        monthIndex: currentMonthIndex,
+        records: {},
+        updatedAt: new Date().toISOString(),
+      },
+    },
+  };
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(freshDb));
+  } catch (err) {
+    console.error('Error resetting database:', err);
+  }
+
+  return freshDb;
+}
+
+/**
  * Computes live metrics for a given month and selected/current day:
  * 1. Resultado del día actual: Visitas × $50
  * 2. Resumen acumulado 1° Quincena ($) (Días 1 al 10)

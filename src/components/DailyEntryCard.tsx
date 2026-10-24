@@ -90,6 +90,14 @@ export const DailyEntryCard: React.FC<DailyEntryCardProps> = ({
     }
   };
 
+  // Also auto-save on blur if user tapped away
+  const handleBlur = () => {
+    if (inputValue === '') {
+      setInputValue('0');
+    }
+    onSaveDayVisits(selectedDay.dateStr, visitsNum);
+  };
+
   return (
     <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-sm relative">
       {/* Day Selector Navigation Header */}
@@ -163,9 +171,9 @@ export const DailyEntryCard: React.FC<DailyEntryCardProps> = ({
         </div>
       )}
 
-      {/* Form supporting Enter key submission on mobile keypad */}
+      {/* Form supporting Enter key submission on mobile keypad without visible button */}
       <form onSubmit={handleSubmit}>
-        {/* 2. Campo de entrada numérico bien grande que active directamente el teclado numérico */}
+        {/* Campo de entrada numérico bien grande que active directamente el teclado numérico */}
         <div className="text-center py-2">
           <label
             htmlFor="visits-input"
@@ -188,52 +196,35 @@ export const DailyEntryCard: React.FC<DailyEntryCardProps> = ({
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
               onFocus={(e) => e.target.select()}
               className="w-full text-center text-6xl sm:text-7xl font-black font-mono tracking-tight bg-slate-50/80 border-3 border-[#FFE600] focus:border-[#0056b3] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#0056b3]/15 text-[#002d62] rounded-2xl py-3 px-4 shadow-inner transition-all selection:bg-[#FFE600] selection:text-[#002d62]"
               placeholder="0"
             />
           </div>
-          <p className="text-[11px] text-slate-500 mt-1 font-medium">
-            Presiona <span className="font-extrabold text-[#0056b3]">Enter / Listo</span> en el teclado para guardar
+          <p className="text-[11px] text-slate-500 mt-1.5 font-medium">
+            Presiona <span className="font-extrabold text-[#0056b3]">Enter / Listo</span> para guardar y calcular
           </p>
         </div>
 
         {/* Subtotal del día: Visitas × $50 */}
-        <div className="bg-[#FFFDE7] border-2 border-yellow-300/80 rounded-2xl p-3 my-3 text-center shadow-xs">
+        <div className="bg-[#FFFDE7] border-2 border-yellow-300/80 rounded-2xl p-3 my-2 text-center shadow-xs">
           <div className="text-xs font-bold text-slate-600">
             Cálculo del día: <span className="font-mono text-[#002d62] font-black">{visitsNum} visitas × ${ratePerVisit}</span>
           </div>
           <div className="text-2xl font-black text-[#002d62] mt-0.5 font-mono">
             Subtotal Día: <span className="text-[#0056b3]">${dailySubtotal.toLocaleString('es-ES')}</span>
           </div>
-        </div>
 
-        {/* 3. Botón destacado "Guardar / Calcular" */}
-        <button
-          type="submit"
-          className={`w-full py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 shadow-md transition-all duration-150 active:scale-[0.98] ${
-            isSavedFeedback
-              ? 'bg-emerald-600 text-white'
-              : 'bg-[#FFE600] hover:bg-[#F0D800] text-[#002d62] border-b-4 border-yellow-500 active:border-b-0 active:translate-y-0.5'
-          }`}
-        >
-          {isSavedFeedback ? (
-            <>
-              <Check className="w-6 h-6 stroke-[3]" />
-              <span>¡Guardado con éxito!</span>
-            </>
-          ) : (
-            <span>Guardar / Calcular (${dailySubtotal.toLocaleString('es-ES')})</span>
+          {/* Feedback pill when Enter is pressed */}
+          {isSavedFeedback && (
+            <div className="mt-2 inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow-xs animate-in fade-in zoom-in-95 duration-150">
+              <Check className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Guardado</span>
+            </div>
           )}
-        </button>
+        </div>
       </form>
-
-      {/* Small status note */}
-      {selectedDay.record?.updatedAt && (
-        <p className="text-[11px] text-center text-slate-400 mt-2 font-medium">
-          Último guardado: {new Date(selectedDay.record.updatedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-        </p>
-      )}
     </div>
   );
 };

@@ -15,6 +15,7 @@ import {
   computeMonthSummary,
   loadDatabase,
   saveDatabase,
+  resetDatabase,
 } from './utils/storage';
 import {
   formatMonthYearSpanish,
@@ -22,6 +23,7 @@ import {
   toDateKey,
   toMonthKey,
 } from './utils/calendar';
+import { playTapSound, triggerVibration } from './utils/feedback';
 
 export default function App() {
   const [db, setDb] = useState<AppDatabase>(() => loadDatabase());
@@ -34,6 +36,7 @@ export default function App() {
   });
 
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayKey);
+  const [showResetModal, setShowResetModal] = useState<boolean>(false);
 
   // Available stored months (sorted chronologically)
   const availableMonthKeys = useMemo(() => {
@@ -137,6 +140,14 @@ export default function App() {
     });
   };
 
+  const handleConfirmReset = () => {
+    playTapSound();
+    triggerVibration([30, 60, 30]);
+    const freshDb = resetDatabase();
+    setDb(freshDb);
+    setShowResetModal(false);
+  };
+
   const currentIndex = workingDays.findIndex((d) => d.dateStr === selectedDateStr);
   const hasPrevDay = currentIndex > 0;
   const hasNextDay = currentIndex >= 0 && currentIndex < workingDays.length - 1;
@@ -178,7 +189,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-md w-full mx-auto px-3.5 py-3.5 space-y-3.5">
-        {/* 2 & 3. Campo de entrada numérico bien grande y Botón destacado Guardar/Calcular (Sin franja de +1 +2) */}
+        {/* 2 & 3. Campo de entrada numérico bien grande (Enter guarda y calcula directamente, sin botón innecesario) */}
         <DailyEntryCard
           selectedDay={selectedDayInfo}
           ratePerVisit={db.ratePerVisit}
@@ -206,7 +217,46 @@ export default function App() {
           ratePerVisit={db.ratePerVisit}
           onSelectDay={(day) => setSelectedDateStr(day.dateStr)}
         />
+
+        {/* Pequeño hipervínculo reset al pie de la aplicación */}
+        <footer className="text-center pt-3 pb-2">
+          <button
+            type="button"
+            onClick={() => setShowResetModal(true)}
+            className="text-xs text-slate-400 hover:text-rose-600 underline cursor-pointer transition font-medium tracking-wide py-1 px-3"
+          >
+            reset
+          </button>
+        </footer>
       </main>
+
+      {/* Modal de confirmación para Reset */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-xs bg-white rounded-3xl p-5 shadow-2xl border-2 border-slate-200 text-center">
+            <h3 className="text-base font-black text-[#002d62]">¿Reiniciar todos los datos?</h3>
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+              Se borrarán todos los registros guardados y el conteo comenzará desde cero.
+            </p>
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => setShowResetModal(false)}
+                className="py-2.5 px-3 rounded-xl border border-slate-300 font-bold text-xs text-slate-600 hover:bg-slate-100 active:scale-95 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReset}
+                className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs shadow-md active:scale-95 transition"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <OfflineIndicator />
       <UpdatePromptModal />
