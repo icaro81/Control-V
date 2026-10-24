@@ -1,0 +1,36 @@
+name: Compilar Control Diario APK / Web
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clonar repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+
+    - name: Instalar dependencias
+      run: npm install
+
+    - name: Verificar tipos TypeScript
+      run: npm run lint
+
+    - name: Compilar aplicación (Vite + PWA)
+      run: npm run build
+
+    - name: Subir artefacto de compilación
+      uses: actions/upload-artifact@v4
+      with:
+        name: control-diario-dist
+        path: dist/
