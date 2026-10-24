@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-soydelivery-yellow: #FFE600;
+  --color-soydelivery-yellow-light: #FFFDE7;
+  --color-soydelivery-yellow-hover: #F0D800;
+  --color-soydelivery-blue: #0056b3;
+  --color-soydelivery-blue-hover: #004494;
+  --color-soydelivery-blue-dark: #002d62;
+  --color-soydelivery-blue-light: #EBF3FC;
+  --color-app-bg: #F4F6F9;
+}
+
+:root {
+  --brand-yellow: #FFE600;
+  --brand-blue: #0056b3;
+  --brand-blue-dark: #002d62;
+  --brand-bg: #F4F6F9;
+}
+
+/* Base styles */
+body {
+  background-color: #F4F6F9;
+  color: #002d62;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* SoyDelivery & MercadoLibre styled buttons */
+.btn-action-yellow {
+  background-color: #FFE600;
+  color: #002d62;
+  font-weight: 900;
+  border-bottom: 4px solid #d4c000;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-action-yellow:hover {
+  background-color: #f7de00;
+}
+
+.btn-action-yellow:active {
+  border-bottom-width: 0px;
+  transform: translateY(2px);
+}
+
+.btn-action-blue {
+  background-color: #0056b3;
+  color: #ffffff;
+  font-weight: 800;
+  border-bottom: 4px solid #003d80;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-action-blue:hover {
+  background-color: #004494;
+}
+
+.btn-action-blue:active {
+  border-bottom-width: 0px;
+  transform: translateY(2px);
+}

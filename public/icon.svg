@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- Inner Glowing Card -->
+  <rect x="56" y="56" width="400" height="400" rx="64" fill="#0f172a" stroke="#334155" stroke-width="4" filter="url(#shadow)"/>
+
+  <!-- Top Badge / Header -->
+  <rect x="96" y="96" width="320" height="64" rx="20" fill="url(#cardGrad)"/>
+  <text x="256" y="138" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="28" fill="#ffffff" text-anchor="middle" letter-spacing="1">CONTROL DIARIO</text>
+
+  <!-- Metric circle -->
+  <circle cx="256" cy="270" r="85" fill="#1e293b" stroke="url(#accent)" stroke-width="8"/>
+  <text x="256" y="260" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="52" fill="#38bdf8" text-anchor="middle">50$</text>
+  <text x="256" y="300" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="20" fill="#94a3b8" text-anchor="middle">x VISITA</text>
+
+  <!-- Bottom Pills / 20 Working Days Indicator -->
+  <rect x="96" y="390" width="150" height="36" rx="12" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+  <text x="171" y="414" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="16" fill="#10b981" text-anchor="middle">1° QUINCENA</text>
+
+  <rect x="266" y="390" width="150" height="36" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+  <text x="341" y="414" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="16" fill="#38bdf8" text-anchor="middle">2° QUINCENA</text>
+</svg>

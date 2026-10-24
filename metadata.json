@@ -1,0 +1,6 @@
+{
+  "name": "Control Diario - Visitas Efectivas",
+  "description": "Aplicación táctil para el registro diario de visitas efectivas, cálculo de subtotales, quincenas y rotación cíclica de 2 meses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
