@@ -1,4 +1,4 @@
-name: Compilar APK Android
+name: Compilar APK Android y Publicar Release
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-apk:
@@ -46,11 +49,34 @@ jobs:
     - name: Preparar archivo APK final
       run: |
         mkdir -p build-output
-        cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-v1.0.0.apk
+        cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
+        cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-latest.apk
 
-    - name: Subir archivo APK listo para descargar
+    - name: Guardar archivo APK como Artifact de respaldo
       uses: actions/upload-artifact@v4
       with:
-        name: Control-Diario-APK-v1.0.0
-        path: build-output/Control-Diario-v1.0.0.apk
+        name: Control-Diario-APK-v1.0.${{ github.run_number }}
+        path: build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
         retention-days: 30
+
+    - name: Publicar Release oficial con APK en GitHub Releases
+      uses: softprops/action-gh-release@v2
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Control Diario APK v1.0.${{ github.run_number }}
+        body: |
+          ## 📱 Control Diario - Visitas Efectivas
+          **Versión:** `v1.0.${{ github.run_number }}` (Compilación automatizada)
+
+          ### 📥 Descarga Directa:
+          Haz clic en el archivo adjunto **`Control-Diario-v1.0.${{ github.run_number }}.apk`** para descargarlo e instalarlo directamente en tu teléfono Android.
+
+          > 🔒 **Tus datos están protegidos:** Al actualizar instalando esta APK, la base de datos y todos los registros guardados se conservan intactos.
+        files: |
+          build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
+          build-output/Control-Diario-latest.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

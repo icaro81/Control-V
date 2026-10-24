@@ -70,14 +70,16 @@ git push -u origin main
 
 ---
 
-## 📱 Cómo obtener y descargar tu archivo APK
+## 📱 Cómo descargar el archivo APK directamente (Sin ZIP)
 
-### Opción A: Descargar el APK compilado directamente desde GitHub (¡Automático!)
-1. Al hacer `git push`, GitHub Actions ejecuta automáticamente el flujo de compilación nativa de Android con Gradle.
-2. Ve a la pestaña **Actions** en tu repositorio de GitHub.
-3. Entra en la última ejecución de **"Compilar APK Android"**.
-4. En la parte inferior, en la sección **Artifacts**, haz clic en **`Control-Diario-APK-v1.0.0`**.
-5. Descargarás directamente el archivo instalable **`Control-Diario-v1.0.0.apk`** para instalar en tu celular.
+### Opción A: Desde la sección Releases de GitHub (Recomendada)
+1. En tu repositorio en GitHub, ve a la sección **Releases** (a la derecha en la página principal del repositorio).
+2. Verás cada versión compilada (ej. `v1.0.1`, `v1.0.2`...).
+3. En la sección **Assets**, haz clic directamente en **`Control-Diario-v1.0.X.apk`** o **`Control-Diario-latest.apk`**.
+4. Se descargará el archivo `.apk` directamente en tu celular Android sin comprimir en `.zip`. Toca el archivo para instalar o actualizar la app.
+
+### Opción B: Actualización automática desde la propia App
+La APK comprueba periódicamente si hay una nueva versión publicada en GitHub Releases. Cuando detecta una actualización, muestra la ventana emergente *"Hay una actualización disponible"* y al pulsar **"Actualizar"** descarga la nueva APK de forma automática conservando todos tus datos.
 
 ### Opción B: Instalación directa desde el navegador (WebAPK)
 1. Abre la aplicación en **Google Chrome** en tu teléfono Android.
