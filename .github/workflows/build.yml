@@ -1,35 +1,56 @@
-name: Compilar Control Diario APK / Web
+name: Compilar APK Android
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
 
     steps:
     - name: Clonar repositorio
       uses: actions/checkout@v4
 
-    - name: Configurar Node.js
+    - name: Configurar Node.js 20
       uses: actions/setup-node@v4
       with:
         node-version: 20
 
+    - name: Configurar Java JDK 21
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+
     - name: Instalar dependencias
       run: npm install --legacy-peer-deps
 
-    - name: Verificar tipos TypeScript
-      run: npm run lint
-
-    - name: Compilar aplicación (Vite + PWA)
+    - name: Compilar aplicación web
       run: npm run build
 
-    - name: Subir artefacto de compilación
+    - name: Sincronizar proyecto Android
+      run: npx cap sync android
+
+    - name: Dar permisos de ejecución a Gradle
+      run: chmod +x android/gradlew
+
+    - name: Compilar APK de Android (Gradle)
+      run: |
+        cd android
+        ./gradlew assembleDebug --no-daemon
+
+    - name: Preparar archivo APK final
+      run: |
+        mkdir -p build-output
+        cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-v1.0.0.apk
+
+    - name: Subir archivo APK listo para descargar
       uses: actions/upload-artifact@v4
       with:
-        name: control-diario-dist
-        path: dist/
+        name: Control-Diario-APK-v1.0.0
+        path: build-output/Control-Diario-v1.0.0.apk
+        retention-days: 30

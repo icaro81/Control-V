@@ -70,22 +70,20 @@ git push -u origin main
 
 ---
 
-## 📱 Cómo generar el archivo APK instalable para Android
+## 📱 Cómo obtener y descargar tu archivo APK
 
-Tienes 2 opciones muy sencillas:
+### Opción A: Descargar el APK compilado directamente desde GitHub (¡Automático!)
+1. Al hacer `git push`, GitHub Actions ejecuta automáticamente el flujo de compilación nativa de Android con Gradle.
+2. Ve a la pestaña **Actions** en tu repositorio de GitHub.
+3. Entra en la última ejecución de **"Compilar APK Android"**.
+4. En la parte inferior, en la sección **Artifacts**, haz clic en **`Control-Diario-APK-v1.0.0`**.
+5. Descargarás directamente el archivo instalable **`Control-Diario-v1.0.0.apk`** para instalar en tu celular.
 
-### Opción A: PWABuilder (Recomendada - Sin instalar Android Studio)
-1. Despliega la aplicación o sube el repositorio.
-2. Ingresa en [PWABuilder.com](https://www.pwabuilder.com).
-3. Pega la URL de tu app.
-4. Haz clic en **"Package for Stores"** → **"Android"**.
-5. Descarga directamente el paquete **`.apk`** listo para instalar en cualquier teléfono o el **`.aab`** para Google Play.
-
-### Opción B: Instalación directa WebAPK desde el teléfono
+### Opción B: Instalación directa desde el navegador (WebAPK)
 1. Abre la aplicación en **Google Chrome** en tu teléfono Android.
 2. Toca el menú de 3 puntos (⋮) en la esquina superior derecha.
 3. Selecciona **"Instalar aplicación"** o **"Agregar a la pantalla principal"**.
-4. Se generará un acceso nativo con ícono propio, pantalla completa y funcionamiento 100% offline.
+4. Se generará la app nativa con ícono propio, pantalla completa y funcionamiento 100% offline.
 
 ---
 
