@@ -12,6 +12,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { UpdatePromptModal } from './components/UpdatePromptModal';
 import { ResumenModal } from './components/ResumenModal';
 import { AppDatabase, WorkingDayInfo } from './types';
+import { APP_VERSION } from './utils/version';
 import {
   computeMonthSummary,
   loadDatabase,
@@ -39,6 +40,8 @@ export default function App() {
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayKey);
   const [showResetModal, setShowResetModal] = useState<boolean>(false);
   const [showResumenModal, setShowResumenModal] = useState<boolean>(false);
+  const [manualCheckTrigger, setManualCheckTrigger] = useState<number>(0);
+  const [showUpToDateToast, setShowUpToDateToast] = useState<boolean>(false);
 
   // Available stored months (sorted chronologically)
   const availableMonthKeys = useMemo(() => {
@@ -221,24 +224,41 @@ export default function App() {
         />
 
         {/* Pie de la app: Resumen a la izquierda, Reset a la derecha */}
-        <footer className="flex items-center justify-between pt-4 pb-2 px-1">
+        <footer className="flex items-center justify-between pt-4 pb-2 px-1 text-xs">
           <button
             type="button"
             onClick={() => {
               playTapSound();
               setShowResumenModal(true);
             }}
-            className="text-xs text-slate-500 hover:text-[#0056b3] underline cursor-pointer transition font-bold tracking-wide py-1 px-2"
+            className="text-slate-500 hover:text-[#0056b3] underline cursor-pointer transition font-bold tracking-wide py-1 px-2"
           >
             Resumen
           </button>
+
+          {/* Versión actual con verificación integrada */}
+          <button
+            type="button"
+            onClick={() => {
+              playTapSound();
+              setManualCheckTrigger((prev) => prev + 1);
+            }}
+            className="text-[10px] text-slate-400 hover:text-[#0056b3] transition font-medium cursor-pointer py-1 px-2 rounded-lg hover:bg-slate-200/50 flex items-center gap-1"
+            title="Toca para buscar actualizaciones de la versión"
+          >
+            <span>v{APP_VERSION}</span>
+            {showUpToDateToast && (
+              <span className="text-emerald-600 font-bold ml-1 animate-in fade-in">✓ Al día</span>
+            )}
+          </button>
+
           <button
             type="button"
             onClick={() => {
               playTapSound();
               setShowResetModal(true);
             }}
-            className="text-xs text-slate-400 hover:text-rose-600 underline cursor-pointer transition font-medium tracking-wide py-1 px-2"
+            className="text-slate-400 hover:text-rose-600 underline cursor-pointer transition font-medium tracking-wide py-1 px-2"
           >
             Reset
           </button>
@@ -283,7 +303,15 @@ export default function App() {
       )}
 
       <OfflineIndicator />
-      <UpdatePromptModal />
+      <UpdatePromptModal
+        manualCheckTrigger={manualCheckTrigger}
+        onManualCheckResult={(hasUpdate) => {
+          if (!hasUpdate) {
+            setShowUpToDateToast(true);
+            setTimeout(() => setShowUpToDateToast(false), 2500);
+          }
+        }}
+      />
     </div>
   );
 }

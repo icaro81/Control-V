@@ -1,7 +1,7 @@
 {
   "name": "control-diario-apk",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Control diario de visitas efectivas con cálculo por quincenas y rotación cíclica de 2 meses.",
   "type": "module",
   "scripts": {
