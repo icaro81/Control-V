@@ -10,6 +10,7 @@ import { SummaryPanel } from './components/SummaryPanel';
 import { WorkingDaysCalendar } from './components/WorkingDaysCalendar';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { UpdatePromptModal } from './components/UpdatePromptModal';
+import { ResumenModal } from './components/ResumenModal';
 import { AppDatabase, WorkingDayInfo } from './types';
 import {
   computeMonthSummary,
@@ -37,6 +38,7 @@ export default function App() {
 
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayKey);
   const [showResetModal, setShowResetModal] = useState<boolean>(false);
+  const [showResumenModal, setShowResumenModal] = useState<boolean>(false);
 
   // Available stored months (sorted chronologically)
   const availableMonthKeys = useMemo(() => {
@@ -218,17 +220,39 @@ export default function App() {
           onSelectDay={(day) => setSelectedDateStr(day.dateStr)}
         />
 
-        {/* Pequeño hipervínculo reset al pie de la aplicación */}
-        <footer className="text-center pt-3 pb-2">
+        {/* Pie de la app: Resumen a la izquierda, Reset a la derecha */}
+        <footer className="flex items-center justify-between pt-4 pb-2 px-1">
           <button
             type="button"
-            onClick={() => setShowResetModal(true)}
-            className="text-xs text-slate-400 hover:text-rose-600 underline cursor-pointer transition font-medium tracking-wide py-1 px-3"
+            onClick={() => {
+              playTapSound();
+              setShowResumenModal(true);
+            }}
+            className="text-xs text-slate-500 hover:text-[#0056b3] underline cursor-pointer transition font-bold tracking-wide py-1 px-2"
           >
-            reset
+            Resumen
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              playTapSound();
+              setShowResetModal(true);
+            }}
+            className="text-xs text-slate-400 hover:text-rose-600 underline cursor-pointer transition font-medium tracking-wide py-1 px-2"
+          >
+            Reset
           </button>
         </footer>
       </main>
+
+      {/* Modal de Resumen Quincenal y Total */}
+      <ResumenModal
+        isOpen={showResumenModal}
+        onClose={() => setShowResumenModal(false)}
+        monthData={activeMonthData}
+        summary={summary}
+        ratePerVisit={db.ratePerVisit}
+      />
 
       {/* Modal de confirmación para Reset */}
       {showResetModal && (
