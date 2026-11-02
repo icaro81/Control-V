@@ -5,18 +5,25 @@ interface SummaryPanelProps {
   summary: MonthSummary;
   selectedDay: WorkingDayInfo | null;
   ratePerVisit: number;
+  onChangeRate?: (newRate: number) => void;
 }
 
 export const SummaryPanel: React.FC<SummaryPanelProps> = ({
   summary,
   selectedDay,
   ratePerVisit,
+  onChangeRate,
 }) => {
   const currentVisits = selectedDay?.record?.visits ?? 0;
   const currentSubtotal = currentVisits * ratePerVisit;
 
-  const q1Progress = Math.min(100, Math.round((summary.q1DaysCompleted / 10) * 100));
-  const q2Progress = Math.min(100, Math.round((summary.q2DaysCompleted / 10) * 100));
+  const q1Progress = summary.q1TotalDays > 0
+    ? Math.min(100, Math.round((summary.q1DaysCompleted / summary.q1TotalDays) * 100))
+    : 0;
+
+  const q2Progress = summary.q2TotalDays > 0
+    ? Math.min(100, Math.round((summary.q2DaysCompleted / summary.q2TotalDays) * 100))
+    : 0;
 
   return (
     <div className="space-y-2.5">
@@ -24,13 +31,36 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({
         <h3 className="text-xs font-black uppercase tracking-wider text-[#002d62]">
           Panel de Resultados
         </h3>
-        <span className="text-[11px] bg-[#FFE600] text-[#002d62] font-black px-2.5 py-0.5 rounded-full border border-yellow-400">
-          ${ratePerVisit} / visita
-        </span>
+
+        {/* Rate Selector x50 / x62 */}
+        <div className="flex items-center gap-1 bg-slate-200/80 p-0.5 rounded-xl border border-slate-300">
+          <button
+            type="button"
+            onClick={() => onChangeRate?.(50)}
+            className={`px-2 py-0.5 rounded-lg text-[11px] font-black transition-all ${
+              ratePerVisit === 50
+                ? 'bg-[#0056b3] text-[#FFE600] shadow-xs'
+                : 'text-slate-600 hover:text-[#002d62]'
+            }`}
+          >
+            x50
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeRate?.(62)}
+            className={`px-2 py-0.5 rounded-lg text-[11px] font-black transition-all ${
+              ratePerVisit === 62
+                ? 'bg-[#0056b3] text-[#FFE600] shadow-xs'
+                : 'text-slate-600 hover:text-[#002d62]'
+            }`}
+          >
+            x62
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {/* 1. Resultado del día actual: Visitas × $50 */}
+        {/* 1. Resultado del día actual: Visitas × Tarifa */}
         <div className="bg-white border-2 border-[#0056b3]/20 rounded-2xl p-3.5 shadow-sm">
           <span className="text-[10px] font-black uppercase tracking-wider text-[#0056b3] block mb-0.5">
             Día Seleccionado
@@ -44,26 +74,26 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({
           </div>
         </div>
 
-        {/* 2. Resumen acumulado 1° Quincena ($) */}
+        {/* 2. Resumen acumulado 1° Quincena (1 al 15) */}
         <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm">
           <div className="flex items-center justify-between mb-0.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
               1° Quincena ($)
             </span>
             <span className="text-[9px] font-black bg-[#FFE600] text-[#002d62] px-2 py-0.2 rounded border border-yellow-400">
-              Días 1 - 10
+              Días 1 - 15
             </span>
           </div>
           <div className="text-2xl font-black text-[#002d62] font-mono">
             ${summary.q1Subtotal.toLocaleString('es-ES')}
           </div>
           <div className="mt-1 text-xs font-bold text-slate-500 flex items-center justify-between">
-            <span>Visitas (Sem 1 y 2):</span>
+            <span>Visitas (1 al 15):</span>
             <span className="text-[#002d62] font-mono font-black">{summary.q1Visits}</span>
           </div>
           <div className="mt-2">
             <div className="flex justify-between text-[10px] text-slate-400 mb-1">
-              <span>{summary.q1DaysCompleted} de 10 días</span>
+              <span>{summary.q1DaysCompleted} de {summary.q1TotalDays} días</span>
               <span className="font-bold text-[#002d62]">{q1Progress}%</span>
             </div>
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -75,26 +105,26 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({
           </div>
         </div>
 
-        {/* 3. Resumen acumulado 2° Quincena ($) */}
+        {/* 3. Resumen acumulado 2° Quincena (16 al fin de mes) */}
         <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm">
           <div className="flex items-center justify-between mb-0.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
               2° Quincena ($)
             </span>
             <span className="text-[9px] font-black bg-[#0056b3] text-white px-2 py-0.2 rounded">
-              Días 11 - 20
+              Días 16 - Fin
             </span>
           </div>
           <div className="text-2xl font-black text-[#002d62] font-mono">
             ${summary.q2Subtotal.toLocaleString('es-ES')}
           </div>
           <div className="mt-1 text-xs font-bold text-slate-500 flex items-center justify-between">
-            <span>Visitas (Sem 3 y 4):</span>
+            <span>Visitas (16 al fin):</span>
             <span className="text-[#002d62] font-mono font-black">{summary.q2Visits}</span>
           </div>
           <div className="mt-2">
             <div className="flex justify-between text-[10px] text-slate-400 mb-1">
-              <span>{summary.q2DaysCompleted} de 10 días</span>
+              <span>{summary.q2DaysCompleted} de {summary.q2TotalDays} días</span>
               <span className="font-bold text-[#0056b3]">{q2Progress}%</span>
             </div>
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">

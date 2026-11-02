@@ -67,7 +67,7 @@ export const WorkingDaysCalendar: React.FC<WorkingDaysCalendarProps> = ({
                 : 'text-slate-500 hover:text-[#002d62]'
             }`}
           >
-            1° Quincena (1-10)
+            1° Quincena (1-15)
           </button>
           <button
             onClick={() => setActiveTab('q2')}
@@ -77,7 +77,7 @@ export const WorkingDaysCalendar: React.FC<WorkingDaysCalendarProps> = ({
                 : 'text-slate-500 hover:text-[#002d62]'
             }`}
           >
-            2° Quincena (11-20)
+            2° Quincena (16-fin)
           </button>
         </div>
       </div>

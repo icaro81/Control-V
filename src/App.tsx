@@ -10,9 +10,8 @@ import { SummaryPanel } from './components/SummaryPanel';
 import { WorkingDaysCalendar } from './components/WorkingDaysCalendar';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { UpdatePromptModal } from './components/UpdatePromptModal';
-import { ResumenModal } from './components/ResumenModal';
+import { QuincenasSummaryModal } from './components/QuincenasSummaryModal';
 import { AppDatabase, WorkingDayInfo } from './types';
-import { APP_VERSION } from './utils/version';
 import {
   computeMonthSummary,
   loadDatabase,
@@ -39,9 +38,7 @@ export default function App() {
 
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayKey);
   const [showResetModal, setShowResetModal] = useState<boolean>(false);
-  const [showResumenModal, setShowResumenModal] = useState<boolean>(false);
-  const [manualCheckTrigger, setManualCheckTrigger] = useState<number>(0);
-  const [showUpToDateToast, setShowUpToDateToast] = useState<boolean>(false);
+  const [showQuincenasModal, setShowQuincenasModal] = useState<boolean>(false);
 
   // Available stored months (sorted chronologically)
   const availableMonthKeys = useMemo(() => {
@@ -65,7 +62,7 @@ export default function App() {
     };
   }, [db.months, activeMonthKey]);
 
-  // Calculate the 20 working days for the active month
+  // Calculate working days for the active month
   const workingDays = useMemo(() => {
     return getWorkingDaysForMonth(
       activeMonthData.year,
@@ -103,6 +100,20 @@ export default function App() {
   const summary = useMemo(() => {
     return computeMonthSummary(workingDays, todayKey, db.ratePerVisit);
   }, [workingDays, todayKey, db.ratePerVisit]);
+
+  // Toggle or select rate per visit (50 or 62)
+  const handleChangeRate = (newRate: number) => {
+    playTapSound();
+    triggerVibration(20);
+    setDb((prevDb) => {
+      const updatedDb: AppDatabase = {
+        ...prevDb,
+        ratePerVisit: newRate,
+      };
+      saveDatabase(updatedDb);
+      return updatedDb;
+    });
+  };
 
   // Save visits for a given day
   const handleSaveDayVisits = (dateStr: string, visits: number, notes?: string) => {
@@ -183,7 +194,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F5F6F9] text-[#0F172A] flex flex-col font-sans pb-10">
-      {/* 1. Muestra la fecha del día actual automáticamente en la parte superior (Sin franja de títulos ni iconos innecesarios) */}
+      {/* 1. Muestra la fecha del día actual automáticamente en la parte superior */}
       <Header
         currentDate={currentDate}
         activeMonthKey={activeMonthKey}
@@ -194,7 +205,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-md w-full mx-auto px-3.5 py-3.5 space-y-3.5">
-        {/* 2 & 3. Campo de entrada numérico bien grande (Enter guarda y calcula directamente, sin botón innecesario) */}
+        {/* 2 & 3. Campo de entrada numérico bien grande con selección de tarifa x50 / x62 */}
         <DailyEntryCard
           selectedDay={selectedDayInfo}
           ratePerVisit={db.ratePerVisit}
@@ -202,19 +213,21 @@ export default function App() {
           onSelectPrevDay={handleSelectPrevDay}
           onSelectNextDay={handleSelectNextDay}
           onJumpToToday={handleJumpToToday}
+          onChangeRate={handleChangeRate}
           hasPrevDay={hasPrevDay}
           hasNextDay={hasNextDay}
           todayDateKey={todayKey}
         />
 
-        {/* 4. Panel de Resultados (Actualización al instante) */}
+        {/* 4. Panel de Resultados con totales discriminados por quincena (1-15 y 16-fin) y total */}
         <SummaryPanel
           summary={summary}
           selectedDay={selectedDayInfo}
           ratePerVisit={db.ratePerVisit}
+          onChangeRate={handleChangeRate}
         />
 
-        {/* 5. Calendario de 20 Días Hábiles (Lunes a Viernes, Quincenas 1 y 2) */}
+        {/* 5. Calendario de Días Hábiles (Lunes a Viernes, Quincena 1 y Quincena 2) */}
         <WorkingDaysCalendar
           workingDays={workingDays}
           selectedDateStr={selectedDateStr}
@@ -223,56 +236,30 @@ export default function App() {
           onSelectDay={(day) => setSelectedDateStr(day.dateStr)}
         />
 
-        {/* Pie de la app: Resumen a la izquierda, Reset a la derecha */}
-        <footer className="flex items-center justify-between pt-4 pb-2 px-1 text-xs">
+        {/* Pie de la app: lado izquierdo hipervínculo 'resumen', lado derecho hipervínculo 'reset' */}
+        <footer className="flex items-center justify-between px-2 pt-4 pb-2 border-t border-slate-200/60 mt-2">
           <button
             type="button"
             onClick={() => {
               playTapSound();
-              setShowResumenModal(true);
+              setShowQuincenasModal(true);
             }}
-            className="text-slate-500 hover:text-[#0056b3] underline cursor-pointer transition font-bold tracking-wide py-1 px-2"
+            className="text-xs text-[#0056b3] hover:text-[#003d80] underline cursor-pointer font-bold tracking-wide py-1 px-2 transition-colors active:scale-95"
           >
-            Resumen
+            resumen
           </button>
-
-          {/* Versión actual con verificación integrada */}
-          <button
-            type="button"
-            onClick={() => {
-              playTapSound();
-              setManualCheckTrigger((prev) => prev + 1);
-            }}
-            className="text-[10px] text-slate-400 hover:text-[#0056b3] transition font-medium cursor-pointer py-1 px-2 rounded-lg hover:bg-slate-200/50 flex items-center gap-1"
-            title="Toca para buscar actualizaciones de la versión"
-          >
-            <span>v{APP_VERSION}</span>
-            {showUpToDateToast && (
-              <span className="text-emerald-600 font-bold ml-1 animate-in fade-in">✓ Al día</span>
-            )}
-          </button>
-
           <button
             type="button"
             onClick={() => {
               playTapSound();
               setShowResetModal(true);
             }}
-            className="text-slate-400 hover:text-rose-600 underline cursor-pointer transition font-medium tracking-wide py-1 px-2"
+            className="text-xs text-slate-400 hover:text-rose-600 underline cursor-pointer transition font-medium tracking-wide py-1 px-2 active:scale-95"
           >
-            Reset
+            reset
           </button>
         </footer>
       </main>
-
-      {/* Modal de Resumen Quincenal y Total */}
-      <ResumenModal
-        isOpen={showResumenModal}
-        onClose={() => setShowResumenModal(false)}
-        monthData={activeMonthData}
-        summary={summary}
-        ratePerVisit={db.ratePerVisit}
-      />
 
       {/* Modal de confirmación para Reset */}
       {showResetModal && (
@@ -302,16 +289,18 @@ export default function App() {
         </div>
       )}
 
-      <OfflineIndicator />
-      <UpdatePromptModal
-        manualCheckTrigger={manualCheckTrigger}
-        onManualCheckResult={(hasUpdate) => {
-          if (!hasUpdate) {
-            setShowUpToDateToast(true);
-            setTimeout(() => setShowUpToDateToast(false), 2500);
-          }
-        }}
+      {/* Modal de Resumen por Quincenas y Total con descargas PDF y Hoja de Cálculo */}
+      <QuincenasSummaryModal
+        isOpen={showQuincenasModal}
+        onClose={() => setShowQuincenasModal(false)}
+        monthName={activeMonthData.monthName}
+        monthKey={activeMonthKey}
+        summary={summary}
+        ratePerVisit={db.ratePerVisit}
       />
+
+      <OfflineIndicator />
+      <UpdatePromptModal />
     </div>
   );
 }

@@ -15,6 +15,7 @@ interface DailyEntryCardProps {
   onSelectPrevDay: () => void;
   onSelectNextDay: () => void;
   onJumpToToday: () => void;
+  onChangeRate?: (newRate: number) => void;
   hasPrevDay: boolean;
   hasNextDay: boolean;
   todayDateKey: string;
@@ -27,6 +28,7 @@ export const DailyEntryCard: React.FC<DailyEntryCardProps> = ({
   onSelectPrevDay,
   onSelectNextDay,
   onJumpToToday,
+  onChangeRate,
   hasPrevDay,
   hasNextDay,
   todayDateKey,
@@ -125,7 +127,7 @@ export const DailyEntryCard: React.FC<DailyEntryCardProps> = ({
                   : 'bg-[#0056b3] text-white border border-[#004494]'
               }`}
             >
-              {selectedDay.quincena === 1 ? '1° Quincena' : '2° Quincena'} (Semana {selectedDay.weekNumber})
+              {selectedDay.quincena === 1 ? '1° Quincena (1-15)' : '2° Quincena (16-fin)'}
             </span>
 
             {isToday && (
@@ -207,12 +209,43 @@ export const DailyEntryCard: React.FC<DailyEntryCardProps> = ({
           </p>
         </div>
 
-        {/* Subtotal del día: Visitas × $50 */}
+        {/* Subtotal del día: Visitas × $50 o $62 seleccionable */}
         <div className="bg-[#FFFDE7] border-2 border-yellow-300/80 rounded-2xl p-3 my-2 text-center shadow-xs">
-          <div className="text-xs font-bold text-slate-600">
-            Cálculo del día: <span className="font-mono text-[#002d62] font-black">{visitsNum} visitas × ${ratePerVisit}</span>
+          <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 flex-wrap">
+            <span>Cálculo:</span>
+            <span className="font-mono text-[#002d62] font-black">{visitsNum} visitas ×</span>
+            <div className="inline-flex rounded-xl bg-yellow-200/70 p-0.5 border border-yellow-300">
+              <button
+                type="button"
+                onClick={() => {
+                  playTapSound();
+                  onChangeRate?.(50);
+                }}
+                className={`px-2.5 py-0.5 rounded-lg text-xs font-black transition-all ${
+                  ratePerVisit === 50
+                    ? 'bg-[#0056b3] text-[#FFE600] shadow-xs'
+                    : 'text-[#002d62] hover:bg-yellow-300/60'
+                }`}
+              >
+                x50
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playTapSound();
+                  onChangeRate?.(62);
+                }}
+                className={`px-2.5 py-0.5 rounded-lg text-xs font-black transition-all ${
+                  ratePerVisit === 62
+                    ? 'bg-[#0056b3] text-[#FFE600] shadow-xs'
+                    : 'text-[#002d62] hover:bg-yellow-300/60'
+                }`}
+              >
+                x62
+              </button>
+            </div>
           </div>
-          <div className="text-2xl font-black text-[#002d62] mt-0.5 font-mono">
+          <div className="text-2xl font-black text-[#002d62] mt-1 font-mono">
             Subtotal Día: <span className="text-[#0056b3]">${dailySubtotal.toLocaleString('es-ES')}</span>
           </div>
 

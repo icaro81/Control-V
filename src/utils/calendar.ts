@@ -93,10 +93,10 @@ export function getWorkingDaysForMonth(
       const isPast = currentDate < todayDate;
       const isFuture = currentDate > todayDate;
 
-      // 1° Quincena: Días 1 al 10 hábiles (Semanas 1 y 2)
-      // 2° Quincena: Días 11 al 20+ hábiles (Semanas 3 y 4)
-      const quincena: 1 | 2 = workingCount <= 10 ? 1 : 2;
-      const weekNumber = Math.ceil(workingCount / 5);
+      // 1° Quincena: Días del 1 al 15 del mes
+      // 2° Quincena: Días del 16 al restante del mes
+      const quincena: 1 | 2 = day <= 15 ? 1 : 2;
+      const weekNumber = Math.ceil(day / 7);
 
       const dayName = SPANISH_DAYS_FULL[dayOfWeek];
       const shortMonth = SPANISH_MONTHS[monthIndex].slice(0, 3);

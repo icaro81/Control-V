@@ -42,9 +42,11 @@ export interface MonthSummary {
   q1Visits: number;
   q1Subtotal: number;
   q1DaysCompleted: number;
+  q1TotalDays: number;
   q2Visits: number;
   q2Subtotal: number;
   q2DaysCompleted: number;
+  q2TotalDays: number;
   totalVisits: number;
   totalSubtotal: number;
   totalDaysRecorded: number;

@@ -162,10 +162,12 @@ export function computeMonthSummary(
   let q1Visits = 0;
   let q1Subtotal = 0;
   let q1DaysCompleted = 0;
+  let q1TotalDays = 0;
 
   let q2Visits = 0;
   let q2Subtotal = 0;
   let q2DaysCompleted = 0;
+  let q2TotalDays = 0;
 
   let totalVisits = 0;
   let totalSubtotal = 0;
@@ -185,12 +187,14 @@ export function computeMonthSummary(
     }
 
     if (day.quincena === 1) {
+      q1TotalDays++;
       q1Visits += visits;
       q1Subtotal += subtotal;
       if (day.record && day.record.visits > 0) {
         q1DaysCompleted++;
       }
     } else {
+      q2TotalDays++;
       q2Visits += visits;
       q2Subtotal += subtotal;
       if (day.record && day.record.visits > 0) {
@@ -208,14 +212,63 @@ export function computeMonthSummary(
     q1Visits,
     q1Subtotal,
     q1DaysCompleted,
+    q1TotalDays,
     q2Visits,
     q2Subtotal,
     q2DaysCompleted,
+    q2TotalDays,
     totalVisits,
     totalSubtotal,
     totalDaysRecorded,
     totalWorkingDays: workingDays.length,
   };
+}
+
+/**
+ * Exports Quincenas summary only (NO daily details, only quincenas and total) to CSV format
+ */
+export function exportQuincenasCSV(
+  monthName: string,
+  summary: MonthSummary,
+  rate: number
+): string {
+  const headers = [
+    'Periodo',
+    'Rango de Dias',
+    'Dias Habiles Registrados',
+    'Total Visitas Efectivas',
+    'Valor x Visita ($)',
+    'Subtotal a Facturar ($)',
+  ];
+
+  const rows = [
+    [
+      '"1° Quincena"',
+      '"Dias 1 al 15"',
+      `"${summary.q1DaysCompleted} de ${summary.q1TotalDays}"`,
+      summary.q1Visits,
+      rate,
+      summary.q1Subtotal,
+    ].join(','),
+    [
+      '"2° Quincena"',
+      '"Dias 16 al fin de mes"',
+      `"${summary.q2DaysCompleted} de ${summary.q2TotalDays}"`,
+      summary.q2Visits,
+      rate,
+      summary.q2Subtotal,
+    ].join(','),
+    [
+      '"TOTAL MENSUAL"',
+      `"${monthName}"`,
+      `"${summary.totalDaysRecorded} de ${summary.totalWorkingDays}"`,
+      summary.totalVisits,
+      rate,
+      summary.totalSubtotal,
+    ].join(','),
+  ];
+
+  return [headers.join(','), ...rows].join('\n');
 }
 
 /**
