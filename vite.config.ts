@@ -60,6 +60,11 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    define: {
+      'import.meta.env.VITE_APP_VERSION': JSON.stringify(
+        process.env.VITE_APP_VERSION || '1.1.12'
+      ),
+    },
     server: {
       host: '0.0.0.0',
       port: 3000,

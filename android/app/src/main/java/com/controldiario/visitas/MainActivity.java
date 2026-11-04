@@ -15,9 +15,12 @@ public class MainActivity extends BridgeActivity {
                 @Override
                 public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
                     try {
-                        Intent i = new Intent(Intent.ACTION_VIEW);
-                        i.setData(Uri.parse(url));
-                        startActivity(i);
+                        // Only open external http/https urls via Android system intent (e.g. GitHub APK downloads)
+                        if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                            Intent i = new Intent(Intent.ACTION_VIEW);
+                            i.setData(Uri.parse(url));
+                            startActivity(i);
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

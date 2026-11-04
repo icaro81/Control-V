@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { RefreshCw, Download, CheckCircle2 } from 'lucide-react';
+import { RefreshCw, Download } from 'lucide-react';
 import {
   checkForRemoteUpdate,
   APP_VERSION,
@@ -8,23 +8,25 @@ import {
   LATEST_APK_URL,
   RemoteVersionInfo,
 } from '../utils/version';
-import { playTapSound, playSuccessSound, triggerVibration } from '../utils/feedback';
+import { playTapSound, triggerVibration } from '../utils/feedback';
 
 interface UpdatePromptModalProps {
-  manualCheckTrigger?: number;
-  onManualCheckResult?: (hasUpdate: boolean, isLatest?: boolean) => void;
+  forceOpen?: boolean;
+  forcedRemoteInfo?: RemoteVersionInfo | null;
+  onCloseForced?: () => void;
 }
 
 export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
-  manualCheckTrigger = 0,
-  onManualCheckResult,
+  forceOpen = false,
+  forcedRemoteInfo = null,
+  onCloseForced,
 }) => {
   const [showPrompt, setShowPrompt] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [remoteInfo, setRemoteInfo] = useState<RemoteVersionInfo | null>(null);
   const swRegistrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
 
-  // 1. Service Worker auto-check with immediate registration
+  // 1. Service Worker auto-check
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
@@ -37,10 +39,10 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
       swRegistrationRef.current = registration;
       if (registration) {
         registration.update().catch(() => {});
-        // Periodic check every 2 minutes
+        // Periodic check every 5 minutes in background
         setInterval(() => {
           registration.update().catch(() => {});
-        }, 2 * 60 * 1000);
+        }, 5 * 60 * 1000);
       }
     },
   });
@@ -60,44 +62,27 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
     return false;
   }, []);
 
-  // Trigger check on load and foreground
+  // Initial check on mount only
   useEffect(() => {
     performUpdateCheck();
-
-    const handleVisibilityOrFocus = () => {
-      if (document.visibilityState === 'visible' && navigator.onLine) {
-        performUpdateCheck();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
-    window.addEventListener('focus', handleVisibilityOrFocus);
-    window.addEventListener('online', handleVisibilityOrFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
-      window.removeEventListener('focus', handleVisibilityOrFocus);
-      window.removeEventListener('online', handleVisibilityOrFocus);
-    };
   }, [performUpdateCheck]);
 
-  // If ServiceWorker signals needRefresh, show prompt immediately
+  // Synchronize when forced open from manual click
+  useEffect(() => {
+    if (forceOpen) {
+      if (forcedRemoteInfo) {
+        setRemoteInfo(forcedRemoteInfo);
+      }
+      setShowPrompt(true);
+    }
+  }, [forceOpen, forcedRemoteInfo]);
+
+  // If ServiceWorker signals needRefresh, show prompt
   useEffect(() => {
     if (needRefresh) {
       setShowPrompt(true);
     }
   }, [needRefresh]);
-
-  // Handle manual trigger (from footer version click)
-  useEffect(() => {
-    if (manualCheckTrigger > 0) {
-      performUpdateCheck().then((hasUpdate) => {
-        if (onManualCheckResult) {
-          onManualCheckResult(hasUpdate || needRefresh, !hasUpdate && !needRefresh);
-        }
-      });
-    }
-  }, [manualCheckTrigger, performUpdateCheck, needRefresh, onManualCheckResult]);
 
   if (!showPrompt) return null;
 
@@ -107,12 +92,6 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
     setIsUpdating(true);
 
     const downloadUrl = remoteInfo?.downloadUrl || LATEST_APK_URL;
-
-    // Detect if running in Android environment (Capacitor or Android browser)
-    const isAndroid =
-      /android/i.test(navigator.userAgent) ||
-      window.location.protocol === 'capacitor:' ||
-      window.location.protocol === 'http:' && window.location.hostname === 'localhost';
 
     try {
       // 1. Direct APK download trigger
@@ -127,16 +106,7 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
         document.body.removeChild(link);
       }, 1000);
 
-      // If in Capacitor WebView, also try window.open
-      if (isAndroid && typeof window !== 'undefined') {
-        try {
-          window.open(downloadUrl, '_system');
-        } catch {
-          // ignore
-        }
-      }
-
-      // 2. Also refresh ServiceWorker cache for web users
+      // 2. Refresh ServiceWorker cache for web users
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (const reg of registrations) {
@@ -163,11 +133,11 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
 
       localStorage.removeItem(`${VERSION_STORAGE_KEY}_DISMISSED`);
 
-      // Close modal after triggering download
       setTimeout(() => {
         setIsUpdating(false);
         setShowPrompt(false);
-      }, 1200);
+        onCloseForced?.();
+      }, 1500);
     } catch {
       window.location.href = downloadUrl;
     }
@@ -180,6 +150,7 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
     }
     setNeedRefresh(false);
     setShowPrompt(false);
+    onCloseForced?.();
   };
 
   return (

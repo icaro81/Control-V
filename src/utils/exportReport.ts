@@ -1,5 +1,8 @@
 import { jsPDF } from 'jspdf';
 import { MonthSummary } from '../types';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 /**
  * Robust clipboard copy supporting modern Clipboard API and fallback for Android WebViews.
@@ -10,7 +13,7 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
       await navigator.clipboard.writeText(text);
       return true;
     }
-  } catch (err) {
+  } catch {
     // Continue to fallback
   }
 
@@ -34,9 +37,8 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
 }
 
 /**
- * Downloads the summary of quincenas and monthly total as a clean PDF file.
- * Strictly adheres to requirement:
- * Totales discriminados por quincenas (1-15 y 16-fin) y total mensual, sin detalles diarios.
+ * Downloads/shares the summary of quincenas and monthly total as a clean PDF file.
+ * Handles Native Android (Capacitor Filesystem + Share) and Web browser downloads.
  */
 export async function downloadQuincenasPDF(
   monthName: string,
@@ -201,7 +203,30 @@ export async function downloadQuincenasPDF(
 
     const fileName = `Resumen_Facturacion_${monthKey}.pdf`;
 
-    // Try web share first if on mobile (e.g. Android WhatsApp/Drive sharing)
+    // 1. If running natively in Android APK via Capacitor
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const dataUri = doc.output('datauristring');
+        const base64Data = dataUri.split(',')[1];
+        const writeResult = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache,
+        });
+
+        await Share.share({
+          title: `Resumen de Visitas - ${monthName}`,
+          text: `Resumen de facturación de visitas efectivas (${monthName})`,
+          url: writeResult.uri,
+          dialogTitle: 'Guardar o Compartir PDF',
+        });
+        return true;
+      } catch (nativeErr) {
+        console.warn('Native Capacitor save/share fallback:', nativeErr);
+      }
+    }
+
+    // 2. Web browser: standard Blob download + Web Share fallback
     const pdfBlob = doc.output('blob');
     if (typeof navigator !== 'undefined' && navigator.canShare) {
       try {
@@ -213,16 +238,14 @@ export async function downloadQuincenasPDF(
           });
           return true;
         }
-      } catch (shareErr) {
-        // User cancelled share or unsupported; fallback to file download
+      } catch {
+        // Fallback to direct download
       }
     }
 
-    // Standard download
     try {
       doc.save(fileName);
     } catch {
-      // Fallback via Blob URL
       const blobUrl = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = blobUrl;
@@ -244,7 +267,7 @@ export async function downloadQuincenasPDF(
 }
 
 /**
- * Downloads the summary of quincenas as a clean CSV spreadsheet file (compatible with Excel)
+ * Downloads/shares the summary of quincenas as a clean CSV spreadsheet file (compatible with Excel)
  */
 export async function downloadQuincenasCSV(
   monthName: string,
@@ -302,9 +325,37 @@ export async function downloadQuincenasCSV(
       ].join('\r\n');
 
     const fileName = `Resumen_Facturacion_${monthKey}.csv`;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 
-    // Try web share if available on mobile
+    // 1. If running natively in Android APK via Capacitor
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const utf8Bytes = new TextEncoder().encode(csvContent);
+        let binary = '';
+        for (let i = 0; i < utf8Bytes.length; i++) {
+          binary += String.fromCharCode(utf8Bytes[i]);
+        }
+        const base64Data = btoa(binary);
+
+        const writeResult = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache,
+        });
+
+        await Share.share({
+          title: `Resumen de Visitas - ${monthName}`,
+          text: `Resumen de facturación en formato CSV (${monthName})`,
+          url: writeResult.uri,
+          dialogTitle: 'Guardar o Compartir Hoja de Cálculo',
+        });
+        return true;
+      } catch (nativeErr) {
+        console.warn('Native Capacitor CSV save/share fallback:', nativeErr);
+      }
+    }
+
+    // 2. Web browser: standard Blob download + Web Share fallback
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     if (typeof navigator !== 'undefined' && navigator.canShare) {
       try {
         const file = new File([blob], fileName, { type: 'text/csv' });

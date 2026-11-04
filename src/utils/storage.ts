@@ -45,18 +45,32 @@ export function loadDatabase(): AppDatabase {
   const currentYear = now.getFullYear();
   const currentMonthIndex = now.getMonth();
 
+  // Previous month in the 2-month cyclic window
+  const prevDate = new Date(currentYear, currentMonthIndex - 1, 1);
+  const prevMonthKey = toMonthKey(prevDate);
+  const prevYear = prevDate.getFullYear();
+  const prevMonthIndex = prevDate.getMonth();
+
   const defaultDb: AppDatabase = {
     version: 2,
     ratePerVisit: DEFAULT_RATE,
     dailyGoal: 15,
     lastActiveMonthKey: currentMonthKey,
     months: {
+      [prevMonthKey]: {
+        monthKey: prevMonthKey,
+        monthName: formatMonthYearSpanish(prevYear, prevMonthIndex),
+        year: prevYear,
+        monthIndex: prevMonthIndex,
+        records: {},
+        updatedAt: new Date().toISOString(),
+      },
       [currentMonthKey]: {
         monthKey: currentMonthKey,
         monthName: formatMonthYearSpanish(currentYear, currentMonthIndex),
         year: currentYear,
         monthIndex: currentMonthIndex,
-        records: {}, // Starts completely clean, 0 visits, no demo data
+        records: {},
         updatedAt: new Date().toISOString(),
       },
     },
@@ -76,12 +90,25 @@ export function loadDatabase(): AppDatabase {
       return defaultDb;
     }
 
+    // Ensure current month is present
     if (!parsed.months[currentMonthKey]) {
       parsed.months[currentMonthKey] = {
         monthKey: currentMonthKey,
         monthName: formatMonthYearSpanish(currentYear, currentMonthIndex),
         year: currentYear,
         monthIndex: currentMonthIndex,
+        records: {},
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    // If only one month exists, ensure the previous month is also available for 2-month cycle switching
+    if (Object.keys(parsed.months).length === 1 && !parsed.months[prevMonthKey]) {
+      parsed.months[prevMonthKey] = {
+        monthKey: prevMonthKey,
+        monthName: formatMonthYearSpanish(prevYear, prevMonthIndex),
+        year: prevYear,
+        monthIndex: prevMonthIndex,
         records: {},
         updatedAt: new Date().toISOString(),
       };

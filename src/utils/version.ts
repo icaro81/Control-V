@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.1.12';
 export const APP_BUILD_TIME = 1793833000000;
 export const VERSION_STORAGE_KEY = 'CONTROL_DIARIO_APP_VERSION';
 export const GITHUB_REPO = 'icaro81/Control-V';

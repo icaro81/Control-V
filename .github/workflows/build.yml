@@ -32,8 +32,27 @@ jobs:
     - name: Instalar dependencias
       run: npm install --legacy-peer-deps
 
+    - name: Sincronizar versión real de la aplicación
+      run: |
+        BUILD_VER="1.1.${{ github.run_number }}"
+        echo "Sincronizando compilación con versión real: $BUILD_VER"
+        npm version $BUILD_VER --no-git-tag-version --allow-same-version
+        sed -i 's/versionCode [0-9]*/versionCode ${{ github.run_number }}/g' android/app/build.gradle
+        sed -i 's/versionName ".*"/versionName "'$BUILD_VER'"/g' android/app/build.gradle
+        cat <<EOF > public/version.json
+        {
+          "version": "$BUILD_VER",
+          "buildTime": $(date +%s000),
+          "releaseDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "title": "Versión $BUILD_VER",
+          "notes": "Compilación oficial de GitHub Actions #$BUILD_VER"
+        }
+        EOF
+
     - name: Compilar aplicación web
       run: npm run build
+      env:
+        VITE_APP_VERSION: 1.1.${{ github.run_number }}
 
     - name: Sincronizar proyecto Android
       run: npx cap sync android
