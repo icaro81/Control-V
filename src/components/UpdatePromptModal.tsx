@@ -1,12 +1,18 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { RefreshCw, Sparkles, CheckCircle2 } from 'lucide-react';
-import { checkForRemoteUpdate, APP_VERSION, VERSION_STORAGE_KEY } from '../utils/version';
+import { RefreshCw, Download, CheckCircle2 } from 'lucide-react';
+import {
+  checkForRemoteUpdate,
+  APP_VERSION,
+  VERSION_STORAGE_KEY,
+  LATEST_APK_URL,
+  RemoteVersionInfo,
+} from '../utils/version';
 import { playTapSound, playSuccessSound, triggerVibration } from '../utils/feedback';
 
 interface UpdatePromptModalProps {
   manualCheckTrigger?: number;
-  onManualCheckResult?: (hasUpdate: boolean) => void;
+  onManualCheckResult?: (hasUpdate: boolean, isLatest?: boolean) => void;
 }
 
 export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
@@ -15,6 +21,7 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
 }) => {
   const [showPrompt, setShowPrompt] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [remoteInfo, setRemoteInfo] = useState<RemoteVersionInfo | null>(null);
   const swRegistrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
 
   // 1. Service Worker auto-check with immediate registration
@@ -29,60 +36,48 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
     onRegisteredSW(swScriptUrl, registration) {
       swRegistrationRef.current = registration;
       if (registration) {
-        // Force an immediate check right after registration
         registration.update().catch(() => {});
-
-        // Automatically re-check for new versions every 60 seconds
+        // Periodic check every 2 minutes
         setInterval(() => {
           registration.update().catch(() => {});
-        }, 60 * 1000);
+        }, 2 * 60 * 1000);
       }
     },
   });
 
-  // 2. Query both ServiceWorker update and remote version.json
+  // 2. Query GitHub Releases and remote version
   const performUpdateCheck = useCallback(async () => {
-    // A. Trigger service worker check
     if (swRegistrationRef.current) {
       swRegistrationRef.current.update().catch(() => {});
-    } else if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then((reg) => {
-        reg?.update().catch(() => {});
-      });
     }
 
-    // B. Direct HTTP check against /version.json (works seamlessly in APKs and PWAs)
-    const { hasUpdate } = await checkForRemoteUpdate();
-    if (hasUpdate) {
+    const { hasUpdate, remoteInfo: info } = await checkForRemoteUpdate();
+    if (hasUpdate && info) {
+      setRemoteInfo(info);
       setShowPrompt(true);
+      return true;
     }
-    return hasUpdate;
+    return false;
   }, []);
 
-  // Trigger check on mount
+  // Trigger check on load and foreground
   useEffect(() => {
-    // Initial check on load
     performUpdateCheck();
 
-    // Check when user returns to app (Android foreground / tab switch)
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === 'visible' && navigator.onLine) {
         performUpdateCheck();
       }
     };
 
-    const handleOnline = () => {
-      performUpdateCheck();
-    };
-
     document.addEventListener('visibilitychange', handleVisibilityOrFocus);
     window.addEventListener('focus', handleVisibilityOrFocus);
-    window.addEventListener('online', handleOnline);
+    window.addEventListener('online', handleVisibilityOrFocus);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
       window.removeEventListener('focus', handleVisibilityOrFocus);
-      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('online', handleVisibilityOrFocus);
     };
   }, [performUpdateCheck]);
 
@@ -93,12 +88,12 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
     }
   }, [needRefresh]);
 
-  // Handle manual trigger (e.g. from version button click)
+  // Handle manual trigger (from footer version click)
   useEffect(() => {
     if (manualCheckTrigger > 0) {
       performUpdateCheck().then((hasUpdate) => {
         if (onManualCheckResult) {
-          onManualCheckResult(hasUpdate || needRefresh);
+          onManualCheckResult(hasUpdate || needRefresh, !hasUpdate && !needRefresh);
         }
       });
     }
@@ -111,51 +106,78 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
     triggerVibration([30, 60]);
     setIsUpdating(true);
 
+    const downloadUrl = remoteInfo?.downloadUrl || LATEST_APK_URL;
+
+    // Detect if running in Android environment (Capacitor or Android browser)
+    const isAndroid =
+      /android/i.test(navigator.userAgent) ||
+      window.location.protocol === 'capacitor:' ||
+      window.location.protocol === 'http:' && window.location.hostname === 'localhost';
+
     try {
-      // 1. Tell waiting service worker to skip waiting and activate
+      // 1. Direct APK download trigger
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', 'Control-Diario-latest.apk');
+      link.setAttribute('target', '_blank');
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 1000);
+
+      // If in Capacitor WebView, also try window.open
+      if (isAndroid && typeof window !== 'undefined') {
+        try {
+          window.open(downloadUrl, '_system');
+        } catch {
+          // ignore
+        }
+      }
+
+      // 2. Also refresh ServiceWorker cache for web users
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (const reg of registrations) {
           if (reg.waiting) {
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           }
-          await reg.update().catch(() => {});
         }
       }
 
-      // 2. Call pwa update
       try {
         await updateServiceWorker(true);
       } catch {
-        // Fallback
+        // ignore
       }
 
-      // 3. Clear all CacheStorage to wipe old bundled HTML/JS
       if ('caches' in window) {
         try {
           const keys = await caches.keys();
           await Promise.all(keys.map((k) => caches.delete(k)));
         } catch {
-          // Ignore
+          // ignore
         }
       }
 
-      // 4. Clear dismissed version flags
       localStorage.removeItem(`${VERSION_STORAGE_KEY}_DISMISSED`);
 
-      // 5. Reload the app to run the new version
+      // Close modal after triggering download
       setTimeout(() => {
-        window.location.reload();
-      }, 400);
+        setIsUpdating(false);
+        setShowPrompt(false);
+      }, 1200);
     } catch {
-      window.location.reload();
+      window.location.href = downloadUrl;
     }
   };
 
   const handleCancel = () => {
     playTapSound();
-    // Dismiss for this session
-    localStorage.setItem(`${VERSION_STORAGE_KEY}_DISMISSED`, APP_VERSION);
+    if (remoteInfo?.version) {
+      localStorage.setItem(`${VERSION_STORAGE_KEY}_DISMISSED`, remoteInfo.version);
+    }
     setNeedRefresh(false);
     setShowPrompt(false);
   };
@@ -164,15 +186,23 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
       <div className="w-full max-w-xs bg-white rounded-3xl p-5 shadow-2xl border-2 border-[#0056b3] text-center relative animate-in zoom-in-95 duration-150">
         <div className="w-12 h-12 rounded-2xl bg-[#FFE600] border-2 border-yellow-400 flex items-center justify-center text-[#002d62] mx-auto mb-3 shadow-xs">
-          <RefreshCw className={`w-6 h-6 ${isUpdating ? 'animate-spin text-[#0056b3]' : ''}`} />
+          {isUpdating ? (
+            <Download className="w-6 h-6 animate-bounce text-[#0056b3]" />
+          ) : (
+            <RefreshCw className="w-6 h-6 text-[#002d62]" />
+          )}
         </div>
 
         {/* Solo debe decir: Hay una nueva versión */}
         <h3 className="text-base font-black text-[#002d62]">
-          {isUpdating ? 'Actualizando...' : 'Hay una nueva versión'}
+          {isUpdating ? 'Descargando actualización...' : 'Hay una nueva versión'}
         </h3>
         <p className="text-xs text-slate-500 mt-1">
-          {isUpdating ? 'Descargando e instalando...' : 'Se aplicarán las mejoras de forma interna.'}
+          {isUpdating
+            ? 'Iniciando descarga en segundo plano...'
+            : remoteInfo?.version
+            ? `Disponible ${remoteInfo.version}`
+            : 'Se aplicarán las mejoras de forma interna.'}
         </p>
 
         {/* Botones: Cancelar y Aceptar */}
@@ -192,7 +222,7 @@ export const UpdatePromptModal: React.FC<UpdatePromptModalProps> = ({
             onClick={handleAccept}
             className="py-2.5 px-3 rounded-xl bg-[#0056b3] hover:bg-[#004494] text-white font-black text-xs shadow-md border-b-2 border-[#002d62] active:translate-y-0.5 active:border-b-0 transition flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
           >
-            {isUpdating ? <span>Cargando...</span> : <span>Aceptar</span>}
+            {isUpdating ? <span>Descargando...</span> : <span>Aceptar</span>}
           </button>
         </div>
       </div>

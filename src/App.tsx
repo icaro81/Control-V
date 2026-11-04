@@ -10,7 +10,7 @@ import { SummaryPanel } from './components/SummaryPanel';
 import { WorkingDaysCalendar } from './components/WorkingDaysCalendar';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { UpdatePromptModal } from './components/UpdatePromptModal';
-import { QuincenasSummaryModal } from './components/QuincenasSummaryModal';
+import { ResumenModal } from './components/ResumenModal';
 import { AppDatabase, WorkingDayInfo } from './types';
 import {
   computeMonthSummary,
@@ -25,6 +25,8 @@ import {
   toMonthKey,
 } from './utils/calendar';
 import { playTapSound, triggerVibration } from './utils/feedback';
+import { APP_VERSION } from './utils/version';
+import { RefreshCw, Check } from 'lucide-react';
 
 export default function App() {
   const [db, setDb] = useState<AppDatabase>(() => loadDatabase());
@@ -38,7 +40,10 @@ export default function App() {
 
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayKey);
   const [showResetModal, setShowResetModal] = useState<boolean>(false);
-  const [showQuincenasModal, setShowQuincenasModal] = useState<boolean>(false);
+  const [showResumenModal, setShowResumenModal] = useState<boolean>(false);
+  const [manualCheckTrigger, setManualCheckTrigger] = useState<number>(0);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState<boolean>(false);
+  const [updateToastMessage, setUpdateToastMessage] = useState<string | null>(null);
 
   // Available stored months (sorted chronologically)
   const availableMonthKeys = useMemo(() => {
@@ -236,18 +241,40 @@ export default function App() {
           onSelectDay={(day) => setSelectedDateStr(day.dateStr)}
         />
 
-        {/* Pie de la app: lado izquierdo hipervínculo 'resumen', lado derecho hipervínculo 'reset' */}
+        {/* Pie de la app: lado izquierdo 'resumen', centro versión check, lado derecho 'reset' */}
         <footer className="flex items-center justify-between px-2 pt-4 pb-2 border-t border-slate-200/60 mt-2">
+          {/* Lado izquierdo: hipervínculo resumen */}
           <button
             type="button"
             onClick={() => {
               playTapSound();
-              setShowQuincenasModal(true);
+              setShowResumenModal(true);
             }}
             className="text-xs text-[#0056b3] hover:text-[#003d80] underline cursor-pointer font-bold tracking-wide py-1 px-2 transition-colors active:scale-95"
           >
             resumen
           </button>
+
+          {/* Centro: hipervínculo con la versión de la apk que sirve como check por si hay actualizaciones */}
+          <button
+            type="button"
+            onClick={() => {
+              playTapSound();
+              triggerVibration(20);
+              setIsCheckingUpdate(true);
+              setManualCheckTrigger((prev) => prev + 1);
+            }}
+            disabled={isCheckingUpdate}
+            className="text-[11px] text-slate-500 hover:text-[#0056b3] font-bold tracking-wider py-1 px-2.5 rounded-xl hover:bg-slate-200/60 active:scale-95 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+            title="Tocar para buscar actualizaciones"
+          >
+            {isCheckingUpdate ? (
+              <RefreshCw className="w-3 h-3 animate-spin text-[#0056b3]" />
+            ) : null}
+            <span>v{APP_VERSION}</span>
+          </button>
+
+          {/* Lado derecho: hipervínculo reset */}
           <button
             type="button"
             onClick={() => {
@@ -260,6 +287,14 @@ export default function App() {
           </button>
         </footer>
       </main>
+
+      {/* Toast informativo al chequear versión manualmente */}
+      {updateToastMessage && (
+        <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 bg-[#002d62] text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg border border-blue-400/30 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <Check className="w-4 h-4 text-[#FFE600] stroke-[3]" />
+          <span>{updateToastMessage}</span>
+        </div>
+      )}
 
       {/* Modal de confirmación para Reset */}
       {showResetModal && (
@@ -289,10 +324,10 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal de Resumen por Quincenas y Total con descargas PDF y Hoja de Cálculo */}
-      <QuincenasSummaryModal
-        isOpen={showQuincenasModal}
-        onClose={() => setShowQuincenasModal(false)}
+      {/* Modal de Resumen por Quincenas (1-15 y 16-fin) y Total con descargas PDF, CSV y copiar al portapapeles */}
+      <ResumenModal
+        isOpen={showResumenModal}
+        onClose={() => setShowResumenModal(false)}
         monthName={activeMonthData.monthName}
         monthKey={activeMonthKey}
         summary={summary}
@@ -300,7 +335,16 @@ export default function App() {
       />
 
       <OfflineIndicator />
-      <UpdatePromptModal />
+      <UpdatePromptModal
+        manualCheckTrigger={manualCheckTrigger}
+        onManualCheckResult={(_hasUpdate, isLatest) => {
+          setIsCheckingUpdate(false);
+          if (isLatest) {
+            setUpdateToastMessage(`Estás en la última versión (v${APP_VERSION})`);
+            setTimeout(() => setUpdateToastMessage(null), 2500);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -62,37 +62,37 @@ jobs:
       run: |
         mkdir -p build-output
         if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
-          cp android/app/build/outputs/apk/release/app-release.apk build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
+          cp android/app/build/outputs/apk/release/app-release.apk build-output/Control-Diario-v1.1.${{ github.run_number }}.apk
           cp android/app/build/outputs/apk/release/app-release.apk build-output/Control-Diario-latest.apk
         else
-          cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-v1.1.${{ github.run_number }}.apk
           cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Control-Diario-latest.apk
         fi
 
     - name: Guardar archivo APK como Artifact de respaldo
       uses: actions/upload-artifact@v4
       with:
-        name: Control-Diario-APK-v1.0.${{ github.run_number }}
-        path: build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
+        name: Control-Diario-APK-v1.1.${{ github.run_number }}
+        path: build-output/Control-Diario-v1.1.${{ github.run_number }}.apk
         retention-days: 30
 
     - name: Publicar Release oficial con APK firmado en GitHub
       uses: softprops/action-gh-release@v2
       if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
       with:
-        tag_name: v1.0.${{ github.run_number }}
-        name: Control Diario APK v1.0.${{ github.run_number }}
+        tag_name: v1.1.${{ github.run_number }}
+        name: Control Diario APK v1.1.${{ github.run_number }}
         body: |
           ## 📱 Control Diario - Visitas Efectivas (Release Oficial)
-          **Versión:** `v1.0.${{ github.run_number }}`
+          **Versión:** `v1.1.${{ github.run_number }}`
           **Firma:** Release RSA 2048-bit (Esquema v1 + v2)
           
           ### 📥 Descarga Directa:
-          Descarga **`Control-Diario-v1.0.${{ github.run_number }}.apk`** para instalar la versión oficial en tu teléfono Android.
+          Descarga **`Control-Diario-latest.apk`** o **`Control-Diario-v1.1.${{ github.run_number }}.apk`** para instalar la versión oficial en tu teléfono Android.
           
           > 💡 **Instalación:** Si tu teléfono muestra el aviso de Google Play Protect al instalar un archivo descargado de internet, presiona en **"Instalar sin analizar"** para continuar.
         files: |
-          build-output/Control-Diario-v1.0.${{ github.run_number }}.apk
+          build-output/Control-Diario-v1.1.${{ github.run_number }}.apk
           build-output/Control-Diario-latest.apk
         draft: false
         prerelease: false

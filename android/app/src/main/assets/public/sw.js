@@ -67,14 +67,14 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-f0c192c2'], (function (workbox) { 'use strict';
+define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
 
   self.addEventListener('message', event => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
       self.skipWaiting();
     }
   });
-
+  workbox.clientsClaim();
   /**
    * The precacheAndRoute() method efficiently caches and responds to
    * requests for URLs in the manifest.
@@ -82,28 +82,28 @@ define(['./workbox-f0c192c2'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "pwa-maskable-512x512.png",
-    "revision": "0cede52c55d6ce542703c2928bc8fd66"
+    "revision": "d62b0edff733de05842cc45bb8b41980"
   }, {
     "url": "pwa-512x512.png",
-    "revision": "5dd7d290ce5b617c96aa3dc448207680"
+    "revision": "136b40666520c3592d68b18e1862d574"
   }, {
     "url": "pwa-192x192.png",
-    "revision": "69e2f6b40be7ad2bc25243f6d60200ce"
+    "revision": "12cb3aecd76d514bf912a99025c55d94"
   }, {
     "url": "index.html",
-    "revision": "e74938e11ed940bff0c808bd259ad08f"
+    "revision": "244eb8cc0c67e3e1c962ba68c8565087"
   }, {
     "url": "icon.svg",
-    "revision": "8191608abf7bb040533d7f3c9f52e7c4"
+    "revision": "5ede8017bd6d52bba01f89df8a3bd65f"
   }, {
     "url": "icon-transparent.png",
-    "revision": "d48f9cd1d16c192ec12f883188589fed"
+    "revision": "136b40666520c3592d68b18e1862d574"
   }, {
     "url": "favicon.ico",
-    "revision": "759c8c4cd194ec0a93a49d38fa21cd41"
+    "revision": "b681baf01011c7c7a853b1cf12a15c0c"
   }, {
     "url": "apple-touch-icon.png",
-    "revision": "eb023bfc18b661f85de4fbc326934022"
+    "revision": "d68366d492a8b71fff01f2fb2fa1d693"
   }, {
     "url": "assets/workbox-window.prod.es5-Bd17z0YL.js",
     "revision": null
@@ -111,35 +111,38 @@ define(['./workbox-f0c192c2'], (function (workbox) { 'use strict';
     "url": "assets/purify.es-Dqk5qvad.js",
     "revision": null
   }, {
-    "url": "assets/index.es-BUC4J--p.js",
+    "url": "assets/index.es-CHDm9IwP.js",
     "revision": null
   }, {
-    "url": "assets/index-nXEuKMBx.css",
+    "url": "assets/index-M8DwCnlS.css",
     "revision": null
   }, {
-    "url": "assets/index-BGW9XENN.js",
+    "url": "assets/index-CeKXLWbc.js",
     "revision": null
   }, {
-    "url": "assets/html2canvas-DbtbzJiH.js",
+    "url": "assets/html2canvas-D4iuw1Il.js",
+    "revision": null
+  }, {
+    "url": "assets/aistudio/IMG_20261024_130248_e_c3c30a7c.png",
     "revision": null
   }, {
     "url": "apple-touch-icon.png",
-    "revision": "eb023bfc18b661f85de4fbc326934022"
+    "revision": "d68366d492a8b71fff01f2fb2fa1d693"
   }, {
     "url": "favicon.ico",
-    "revision": "759c8c4cd194ec0a93a49d38fa21cd41"
+    "revision": "b681baf01011c7c7a853b1cf12a15c0c"
   }, {
     "url": "icon.svg",
-    "revision": "8191608abf7bb040533d7f3c9f52e7c4"
+    "revision": "5ede8017bd6d52bba01f89df8a3bd65f"
   }, {
     "url": "pwa-192x192.png",
-    "revision": "69e2f6b40be7ad2bc25243f6d60200ce"
+    "revision": "12cb3aecd76d514bf912a99025c55d94"
   }, {
     "url": "pwa-512x512.png",
-    "revision": "5dd7d290ce5b617c96aa3dc448207680"
+    "revision": "136b40666520c3592d68b18e1862d574"
   }, {
     "url": "pwa-maskable-512x512.png",
-    "revision": "0cede52c55d6ce542703c2928bc8fd66"
+    "revision": "d62b0edff733de05842cc45bb8b41980"
   }, {
     "url": "manifest.webmanifest",
     "revision": "f7673345d549a28e7ee9c4162dff12d5"
